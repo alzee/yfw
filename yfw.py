@@ -20,6 +20,7 @@ cursor = conn.cursor()
 
 # 创建 redis 对象
 redis = redis.Redis(host='localhost', decode_responses=True)
+redisHash = 'drug'
 
 sql = "select drugId from drug"
 cursor.execute(sql)
@@ -30,7 +31,7 @@ for i in res:
 
 def main():
     global drugs
-    drugs = redis.hgetall('drug')
+    drugs = redis.hgetall(redisHash)
     if (len(drugs) == 0):
         url = 'https://www.yaofangwang.com/yaodian/379739/medicines.html'
         soup = getSoup(url)
@@ -47,10 +48,10 @@ def main():
                 soup = getSoup(url)
                 drugId = soup.select_one('#aFavorite')['data-mid']
                 ourPrice = soup.select_one('#pricedl .money .num').string.strip()
-                redis.hset('drug', drugId, ourPrice)
+                redis.hset(redisHash, drugId, ourPrice)
                 bar.next()
         bar.finish()
-        drugs = redis.hgetall('drug')
+        drugs = redis.hgetall(redisHash)
 
     bar = Bar('正在抓取商品信息...', max=len(drugs))
     for i in drugs:
@@ -58,6 +59,7 @@ def main():
         getInfo(i)
         bar.next()
     bar.finish()
+    redis.del(redisHash)
 
 
 def getSoup(url):
@@ -104,7 +106,7 @@ def getInfo(drugId):
     try:
         #print(sql)
         cursor.execute(sql)
-        redis.hdel('drug', drugId)
+        redis.hdel(redisHash, drugId)
         # print(cursor.fetchall())
     except:
         print('We already have', drugId)
