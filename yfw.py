@@ -59,7 +59,7 @@ def main():
         getInfo(i)
         bar.next()
     bar.finish()
-    redis.del(redisHash)
+    redis.delete(redisHash)
 
 
 def getSoup(url):
