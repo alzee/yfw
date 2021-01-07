@@ -19,6 +19,11 @@
 -- Table structure for table `drug`
 --
 
+drop database if exists `yfw`;
+create database yfw;
+grant all on yfw.* to `yfw`@`localhost` identified by 'yfw';
+use yfw;
+
 DROP TABLE IF EXISTS `drug`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -36,6 +41,7 @@ CREATE TABLE `drug` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
 
 --
 -- Dumping data for table `drug`

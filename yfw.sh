@@ -8,7 +8,7 @@
 
 ############### Main Part ###############
 
-apt intall mariadb-server redis-server
+sudo apt install mariadb-server redis-server
 
 sudo systemctl enable redis-server mariadb
 sudo systemctl restart redis-server mariadb
