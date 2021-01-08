@@ -64,21 +64,26 @@ def getSoup(url):
 
 def getInfo(drugId):
     url = 'https://www.yaofangwang.com/medicine-' + str(drugId) + '.html?sort=sprice&sorttype=desc'
-    # print(url)
     soup = getSoup(url)
     
     retailerCount = soup.select_one('#priceABtn b').string
     
     if int(retailerCount) == 0:
         exit()
-    
+
+    priceTag = soup.select_one('#slist .slist li p.money')
+    if priceTag == None:
+        priceMax = ''
+        priceMin2 = ''
+    else:
+        priceMax = priceTag.string.strip().lstrip('¥')
+
     priceMin = soup.select_one('.maininfo div.info label.num').text.rstrip(' 起')
 
-    priceMaxTag = soup.select_one('#slist .slist li p.money')
-    if priceMaxTag == None:
-        priceMax = ''
-    else:
-        priceMax = priceMaxTag.string.strip().lstrip('¥')
+    url = 'https://www.yaofangwang.com/medicine-' + str(drugId) + '.html?sort=sprice&sorttype=asc'
+    soup = getSoup(url)
+    priceTags = soup.select('#slist .slist li p.money')
+    priceMin2 = priceTags[1].string.strip().lstrip('¥')
 
     sql = "select drugId from drug"
     cursor.execute(sql)
@@ -101,10 +106,10 @@ def getInfo(drugId):
     imgURL = 'https:' + soup.select_one('div.maininfo div.info dd img')['src']
     if int(drugId) in alreadyHave:
         #print('Updating', drugId, '...')
-        sql = f"update drug set approvalNum = '{approvalNum}', name = '{name}', spec = '{spec}', form = '{form}', manufacturer = '{manufacturer}', ourPrice = '{ourPrice}', priceMax = '{priceMax}', priceMin = '{priceMin}' where drugId = '{drugId}'"
+        sql = f"update drug set approvalNum = '{approvalNum}', name = '{name}', spec = '{spec}', form = '{form}', manufacturer = '{manufacturer}', ourPrice = '{ourPrice}', priceMax = '{priceMax}', priceMin = '{priceMin}', priceMin2 = '{priceMin2}' where drugId = '{drugId}'"
     else:
         #print('Inserting', drugId, '...')
-        sql = f"insert into drug (drugId, approvalNum, name, spec, form, manufacturer, ourPrice, priceMax, priceMin, imgURL) values ('{drugId}', '{approvalNum}', '{name}', '{spec}', '{form}', '{manufacturer}', '{ourPrice}', '{priceMax}', '{priceMin}', '{imgURL}')"
+        sql = f"insert into drug (drugId, approvalNum, name, spec, form, manufacturer, ourPrice, priceMax, priceMin, priceMin2, imgURL) values ('{drugId}', '{approvalNum}', '{name}', '{spec}', '{form}', '{manufacturer}', '{ourPrice}', '{priceMax}', '{priceMin}', '{priceMin2}', '{imgURL}')"
     try:
         #print(sql)
         cursor.execute(sql)
