@@ -90,13 +90,6 @@ def getInfo(drugId):
     #    priceMax = priceTag.string.strip().lstrip('¥')
     priceMax = ''
 
-    sql = "select drugId from drug"
-    cursor.execute(sql)
-    res = cursor.fetchall()
-    alreadyHave = []
-    for i in res:
-        alreadyHave.append(i['drugId'])
-
     ourPrice = drugs[drugId].split(':')[0]
     approvalNum = drugs[drugId].split(':')[1]
     info = soup.select('div.maininfo div.info dd')
@@ -109,6 +102,14 @@ def getInfo(drugId):
     manufacturer = info[4].string
     # print(name, spec, form, manufacturer)
     imgURL = 'https:' + soup.select_one('div.maininfo div.info dd img')['src']
+
+    sql = "select drugId from drug"
+    cursor.execute(sql)
+    res = cursor.fetchall()
+    alreadyHave = []
+    for i in res:
+        alreadyHave.append(i['drugId'])
+
     if int(drugId) in alreadyHave:
         #print('Updating', drugId, '...')
         sql = f"update drug set approvalNum = '{approvalNum}', name = '{name}', spec = '{spec}', form = '{form}', manufacturer = '{manufacturer}', ourPrice = '{ourPrice}', priceMax = '{priceMax}', priceMin = '{priceMin}', priceMin2 = '{priceMin2}' where drugId = '{drugId}'"
