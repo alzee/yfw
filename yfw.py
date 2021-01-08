@@ -55,7 +55,6 @@ def main():
     bar.finish()
     redis.delete(redisHash)
 
-
 def getSoup(url):
     """ 返回 BeautifulSoup 对象 """
     headers = {'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'}
@@ -67,14 +66,14 @@ def getInfo(drugId):
     url = 'https://www.yaofangwang.com/medicine-' + str(drugId) + '.html?sort=sprice&sorttype=asc'
     soup = getSoup(url)
 
-    retailerCount = soup.select_one('#priceABtn b').string
-    if int(retailerCount) == 0:
+    retailerCount = int(soup.select_one('#priceABtn b').string)
+    if retailerCount == 0:
         exit()
 
     priceTags = soup.select('#slist .slist li p.money')
     #priceMin = soup.select_one('.maininfo div.info label.num').text.rstrip(' 起')
     priceMin = priceTags[0].string.strip().lstrip('¥')
-    if int(retailerCount) > 1:
+    if retailerCount > 1:
         priceMin2 = priceTags[1].string.strip().lstrip('¥')
     else:
         priceMin2 = ''
@@ -100,7 +99,6 @@ def getInfo(drugId):
         spec = info[2].div.div.text.strip()
     form = info[3].string
     manufacturer = info[4].string
-    # print(name, spec, form, manufacturer)
     imgURL = 'https:' + soup.select_one('div.maininfo div.info dd img')['src']
 
     sql = "select drugId from drug"
@@ -117,14 +115,12 @@ def getInfo(drugId):
         #print('Inserting', drugId, '...')
         sql = f"insert into drug (drugId, approvalNum, name, spec, form, manufacturer, ourPrice, priceMax, priceMin, priceMin2, imgURL) values ('{drugId}', '{approvalNum}', '{name}', '{spec}', '{form}', '{manufacturer}', '{ourPrice}', '{priceMax}', '{priceMin}', '{priceMin2}', '{imgURL}')"
     try:
-        #print(sql)
         cursor.execute(sql)
         redis.hdel(redisHash, drugId)
         # print(cursor.fetchall())
     except:
-        print('We already have', drugId)
+        print('error when processing drugId:', drugId)
     conn.commit()
-
 
 def getPrice(drugId):
     url = 'https://www.yaofangwang.com/medicine-' + str(drugId) + '.html'
