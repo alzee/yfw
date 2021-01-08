@@ -63,27 +63,32 @@ def getSoup(url):
     return BeautifulSoup(html, 'html.parser')
 
 def getInfo(drugId):
-    url = 'https://www.yaofangwang.com/medicine-' + str(drugId) + '.html?sort=sprice&sorttype=desc'
+    # get priceMin
+    url = 'https://www.yaofangwang.com/medicine-' + str(drugId) + '.html?sort=sprice&sorttype=asc'
     soup = getSoup(url)
-    
+
     retailerCount = soup.select_one('#priceABtn b').string
-    
     if int(retailerCount) == 0:
         exit()
 
-    priceTag = soup.select_one('#slist .slist li p.money')
-    if priceTag == None:
-        priceMax = ''
-        priceMin2 = ''
-    else:
-        priceMax = priceTag.string.strip().lstrip('¥')
-
-    priceMin = soup.select_one('.maininfo div.info label.num').text.rstrip(' 起')
-
-    url = 'https://www.yaofangwang.com/medicine-' + str(drugId) + '.html?sort=sprice&sorttype=asc'
-    soup = getSoup(url)
     priceTags = soup.select('#slist .slist li p.money')
-    priceMin2 = priceTags[1].string.strip().lstrip('¥')
+    #priceMin = soup.select_one('.maininfo div.info label.num').text.rstrip(' 起')
+    priceMin = priceTags[0].string.strip().lstrip('¥')
+    if int(retailerCount) > 1:
+        priceMin2 = priceTags[1].string.strip().lstrip('¥')
+    else:
+        priceMin2 = ''
+
+    # get priceMax
+    #url = 'https://www.yaofangwang.com/medicine-' + str(drugId) + '.html?sort=sprice&sorttype=desc'
+    #soup = getSoup(url)
+
+    #priceTag = soup.select_one('#slist .slist li p.money')
+    #if priceTag == None:
+    #    priceMax = ''
+    #else:
+    #    priceMax = priceTag.string.strip().lstrip('¥')
+    priceMax = ''
 
     sql = "select drugId from drug"
     cursor.execute(sql)
