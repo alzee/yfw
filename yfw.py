@@ -22,13 +22,6 @@ cursor = conn.cursor()
 redis = redis.Redis(host='localhost', decode_responses=True)
 redisHash = 'drug'
 
-sql = "select drugId from drug"
-cursor.execute(sql)
-res = cursor.fetchall()
-alreadyHave = []
-for i in res:
-    alreadyHave.append(i['drugId'])
-
 def main():
     global drugs
     drugs = redis.hgetall(redisHash)
@@ -43,12 +36,13 @@ def main():
             soup = getSoup(url)
             li = soup.select('ul.goods3 li')
             for i in li:
+                # https://www.yaofangwang.com/detail-xxxxxxxx.html
                 url = 'https:' + i.a['href']
-                # print(url)
                 soup = getSoup(url)
-                drugId = soup.select_one('#aFavorite')['data-mid']
+                approvalNum = soup.select_one('head title').text.split('__')[0].split(',')[4]
                 ourPrice = soup.select_one('#pricedl .money .num').string.strip()
-                redis.hset(redisHash, drugId, ourPrice)
+                drugId = soup.select_one('#aFavorite')['data-mid']
+                redis.hset(redisHash, drugId, ourPrice + ':' + approvalNum)
                 bar.next()
         bar.finish()
         drugs = redis.hgetall(redisHash)
@@ -86,23 +80,31 @@ def getInfo(drugId):
     else:
         priceMax = priceMaxTag.string.strip().lstrip('¥')
 
+    sql = "select drugId from drug"
+    cursor.execute(sql)
+    res = cursor.fetchall()
+    alreadyHave = []
+    for i in res:
+        alreadyHave.append(i['drugId'])
 
+    ourPrice = drugs[drugId].split(':')[0]
+    approvalNum = drugs[drugId].split(':')[1]
+    info = soup.select('div.maininfo div.info dd')
+    name = info[0].string
+    if info[2].div == None:
+        spec = info[2].text.strip()
+    else:
+        spec = info[2].div.div.text.strip()
+    form = info[3].string
+    manufacturer = info[4].string
+    # print(name, spec, form, manufacturer)
+    imgURL = 'https:' + soup.select_one('div.maininfo div.info dd img')['src']
     if int(drugId) in alreadyHave:
         #print('Updating', drugId, '...')
-        sql = f"update drug set ourPrice = '{drugs[drugId]}', priceMax = '{priceMax}', priceMin = '{priceMin}' where drugId = '{drugId}'"
+        sql = f"update drug set approvalNum = '{approvalNum}', name = '{name}', spec = '{spec}', form = '{form}', manufacturer = '{manufacturer}', ourPrice = '{ourPrice}', priceMax = '{priceMax}', priceMin = '{priceMin}' where drugId = '{drugId}'"
     else:
-        info = soup.select('div.maininfo div.info dd')
-        name = info[0].string
-        if info[2].div == None:
-            spec = info[2].text.strip()
-        else:
-            spec = info[2].div.div.text.strip()
-        form = info[3].string
-        manufacturer = info[4].string
-        # print(name, spec, form, manufacturer)
-        imgURL = 'https:' + soup.select_one('div.maininfo div.info dd img')['src']
         #print('Inserting', drugId, '...')
-        sql = f"insert into drug (drugId, name, spec, form, manufacturer, ourPrice, priceMax, priceMin, imgURL) values ('{drugId}', '{name}', '{spec}', '{form}', '{manufacturer}', '{drugs[drugId]}', '{priceMax}', '{priceMin}', '{imgURL}')"
+        sql = f"insert into drug (drugId, approvalNum, name, spec, form, manufacturer, ourPrice, priceMax, priceMin, imgURL) values ('{drugId}', '{approvalNum}', '{name}', '{spec}', '{form}', '{manufacturer}', '{ourPrice}', '{priceMax}', '{priceMin}', '{imgURL}')"
     try:
         #print(sql)
         cursor.execute(sql)
