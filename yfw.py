@@ -3,6 +3,7 @@
 
 # 导入模块
 import requests
+import time
 from bs4 import BeautifulSoup
 import pymysql.cursors
 import redis
@@ -25,25 +26,27 @@ redisHash = 'drug'
 def main():
     global drugs
     drugs = redis.hgetall(redisHash)
-    if (len(drugs) == 0):
+    if len(drugs) == 0:
         url = 'https://www.yaofangwang.com/yaodian/379739/medicines.html'
         soup = getSoup(url)
         count = soup.select_one('.tabnav .count b').string.strip()
-        pageCount = soup.select_one('span.num').text.strip().lstrip('1 ').lstrip('/ ')
+
         bar = Bar('正在获取商品编号...', max=int(count))
-        for i in range(1, int(pageCount) + 1):
-            url = f'https://www.yaofangwang.com/yaodian/379739/medicines.html?page={i}'
-            soup = getSoup(url)
+        while True:
             li = soup.select('ul.goods3 li')
             for i in li:
-                # https://www.yaofangwang.com/detail-xxxxxxxx.html
-                url = 'https:' + i.a['href']
-                soup = getSoup(url)
-                approvalNum = soup.select_one('head title').text.split('__')[0].split(',')[4]
-                ourPrice = soup.select_one('#pricedl .money .num').string.strip()
-                drugId = soup.select_one('#aFavorite')['data-mid']
+                detailUrl = 'https:' + i.a['href'] # https://www.yaofangwang.com/detail-xxxxxxxx.html
+                detailSoup = getSoup(detailUrl)
+                approvalNum = detailSoup.select_one('head title').text.split('__')[0].split(',')[4]
+                ourPrice = detailSoup.select_one('#pricedl .money .num').string.strip()
+                drugId = detailSoup.select_one('#aFavorite')['data-mid']
                 redis.hset(redisHash, drugId, ourPrice + ':' + approvalNum)
                 bar.next()
+            nextPage = soup.select_one('div.pager div.list a.next')
+            if nextPage == None:
+                break
+            url = 'https://www.yaofangwang.com' + nextPage['href']
+            soup = getSoup(url)
         bar.finish()
         drugs = redis.hgetall(redisHash)
 
