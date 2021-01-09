@@ -69,9 +69,13 @@ def getInfo(drugId):
     url = 'https://www.yaofangwang.com/medicine-' + str(drugId) + '.html?sort=sprice&sorttype=asc'
     soup = getSoup(url)
 
-    retailerCount = int(soup.select_one('#priceABtn b').string)
-    if retailerCount == 0:
-        exit()
+    retailerCount = soup.select_one('#priceABtn b')
+    if retailerCount != None:
+        retailerCount = int(retailerCount.string)
+        if retailerCount == 0:
+            return
+    else:
+        return
 
     priceTags = soup.select('#slist .slist li p.money')
     #priceMin = soup.select_one('.maininfo div.info label.num').text.rstrip(' 起')
