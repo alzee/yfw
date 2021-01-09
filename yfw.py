@@ -99,7 +99,8 @@ def getInfo(drugId):
         spec = info[2].div.div.text.strip()
     form = info[3].string
     manufacturer = info[4].string
-    imgURL = 'https:' + soup.select_one('div.maininfo div.info dd img')['src']
+    #imgURL = 'https:' + soup.select_one('div.maininfo div.info dd img')['src']
+    imgURL = ''
 
     sql = "select drugId from drug"
     cursor.execute(sql)
