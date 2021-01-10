@@ -41,8 +41,11 @@ def main():
                     approvalNum = detailSoup.select_one('head title').text.split('__')[0].split(',')[4]
                 except IndexError:
                     continue
-                ourPrice = detailSoup.select_one('#pricedl .money .num').string.strip()
-                drugId = detailSoup.select_one('#aFavorite')['data-mid']
+                try:
+                    ourPrice = detailSoup.select_one('#pricedl .money .num').string.strip()
+                    drugId = detailSoup.select_one('#aFavorite')['data-mid']
+                except AttributeError:
+                    continue
                 redis.hset(redisHash, drugId, ourPrice + ':' + approvalNum)
                 bar.next()
             nextPage = soup.select_one('div.pager div.list a.next')
