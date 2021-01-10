@@ -37,7 +37,10 @@ def main():
             for i in li:
                 detailUrl = 'https:' + i.a['href'] # https://www.yaofangwang.com/detail-xxxxxxxx.html
                 detailSoup = getSoup(detailUrl)
-                approvalNum = detailSoup.select_one('head title').text.split('__')[0].split(',')[4]
+                try:
+                    approvalNum = detailSoup.select_one('head title').text.split('__')[0].split(',')[4]
+                except IndexError:
+                    continue
                 ourPrice = detailSoup.select_one('#pricedl .money .num').string.strip()
                 drugId = detailSoup.select_one('#aFavorite')['data-mid']
                 redis.hset(redisHash, drugId, ourPrice + ':' + approvalNum)
