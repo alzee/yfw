@@ -38,7 +38,7 @@ def main():
                 detailUrl = 'https:' + i.a['href'] # https://www.yaofangwang.com/detail-xxxxxxxx.html
                 detailSoup = getSoup(detailUrl)
                 try:
-                    approvalNum = detailSoup.select_one('head title').text.split('__')[0].split(',')[4]
+                    approvalNum = detailSoup.select_one('head title').text.split(',')[-1].split('_')[0]
                     ourPrice = detailSoup.select_one('#pricedl .money .num').string.strip()
                     drugId = detailSoup.select_one('#aFavorite')['data-mid']
                 except AttributeError:
