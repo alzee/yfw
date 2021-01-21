@@ -41,12 +41,13 @@ def main():
                     approvalNum = detailSoup.select_one('head title').text.split(',')[-1].split('_')[0]
                     ourPrice = detailSoup.select_one('#pricedl .money .num').string.strip()
                     drugId = detailSoup.select_one('#aFavorite')['data-mid']
+                    ourStock = detailSoup.select_one('#reserve').string.strip()
                 except AttributeError:
                     pass
                 except IndexError:
                     pass
                 else:
-                    redis.hset(redisHash, drugId, ourPrice + ':' + approvalNum)
+                    redis.hset(redisHash, drugId, ourPrice + ':' + approvalNum + ':' + ourStock)
                 bar.next()
             nextPage = soup.select_one('div.pager div.list a.next')
             if nextPage == None:
@@ -83,13 +84,15 @@ def getInfo(drugId):
     else:
         return
 
-    priceTags = soup.select('#slist .slist li p.money')
-    #priceMin = soup.select_one('.maininfo div.info label.num').text.rstrip(' 起')
-    priceMin = priceTags[0].string.strip().lstrip('¥')
+    priceList = soup.select('#slist .slist li')
+    priceMin = priceList[0].select_one('p.money').string.strip().lstrip('¥')
+    stockPriceMin = priceList[0].select_one('.info .sreserve').string.strip()
     if retailerCount > 1:
-        priceMin2 = priceTags[1].string.strip().lstrip('¥')
+        priceMin2 = priceList[1].select_one('p.money').string.strip().lstrip('¥')
+        stockPriceMin2 = priceList[1].select_one('.info .sreserve').string.strip()
     else:
         priceMin2 = ''
+        stockPriceMin2 = ''
 
     # get priceMax
     #url = 'https://www.yaofangwang.com/medicine-' + str(drugId) + '.html?sort=sprice&sorttype=desc'
@@ -104,6 +107,7 @@ def getInfo(drugId):
 
     ourPrice = drugs[drugId].split(':')[0]
     approvalNum = drugs[drugId].split(':')[1]
+    ourStock = drugs[drugId].split(':')[2]
     info = soup.select('div.maininfo div.info dd')
     name = info[0].string
     if info[2].div == None:
@@ -124,10 +128,10 @@ def getInfo(drugId):
 
     if int(drugId) in alreadyHave:
         #print('Updating', drugId, '...')
-        sql = f"update drug set approvalNum = '{approvalNum}', name = '{name}', spec = '{spec}', form = '{form}', manufacturer = '{manufacturer}', ourPrice = '{ourPrice}', priceMax = '{priceMax}', priceMin = '{priceMin}', priceMin2 = '{priceMin2}', imgURL = '{imgURL}', updateOn = CURRENT_TIMESTAMP where drugId = '{drugId}'"
+        sql = f"update drug set approvalNum = '{approvalNum}', name = '{name}', spec = '{spec}', form = '{form}', manufacturer = '{manufacturer}', ourPrice = '{ourPrice}', ourStock = '{ourStock}', priceMax = '{priceMax}', priceMin = '{priceMin}', stockPriceMin = '{stockPriceMin}', priceMin2 = '{priceMin2}', stockPriceMin2 = '{stockPriceMin2}', imgURL = '{imgURL}', updateOn = CURRENT_TIMESTAMP where drugId = '{drugId}'"
     else:
         #print('Inserting', drugId, '...')
-        sql = f"insert into drug (drugId, approvalNum, name, spec, form, manufacturer, ourPrice, priceMax, priceMin, priceMin2, imgURL) values ('{drugId}', '{approvalNum}', '{name}', '{spec}', '{form}', '{manufacturer}', '{ourPrice}', '{priceMax}', '{priceMin}', '{priceMin2}', '{imgURL}')"
+        sql = f"insert into drug (drugId, approvalNum, name, spec, form, manufacturer, ourPrice, ourStock, priceMax, priceMin, stockPriceMin, priceMin2, stockPriceMin2, imgURL) values ('{drugId}', '{approvalNum}', '{name}', '{spec}', '{form}', '{manufacturer}', '{ourPrice}', '{ourStock}', '{priceMax}', '{priceMin}', '{stockPriceMin}', '{priceMin2}', '{stockPriceMin2}', '{imgURL}')"
     try:
         cursor.execute(sql)
         redis.hdel(redisHash, drugId)
